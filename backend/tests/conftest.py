@@ -66,3 +66,55 @@ def db(engine):
     session.close()
     outer.rollback()
     connection.close()
+
+
+@pytest.fixture
+def client(db):
+    """HTTP test client whose requests use the same rolled-back session as the test."""
+    from fastapi.testclient import TestClient
+
+    from app.db import get_db
+    from app.main import app
+
+    app.dependency_overrides[get_db] = lambda: db
+    yield TestClient(app)
+    app.dependency_overrides.clear()
+
+
+PASSWORD = "password123"
+
+
+@pytest.fixture
+def make_user(db):
+    """Factory: make_user(role=..., email=...) inserts a user and returns it."""
+    from app.models import Role, User
+    from app.security import hash_password
+
+    counter = 0
+
+    def _make(role=Role.REQUESTER, email=None, is_active=True, password=PASSWORD):
+        nonlocal counter
+        counter += 1
+        user = User(
+            email=email or f"user{counter}@example.com",
+            full_name=f"User {counter}",
+            hashed_password=hash_password(password),
+            role=role,
+            is_active=is_active,
+        )
+        db.add(user)
+        db.flush()
+        return user
+
+    return _make
+
+
+@pytest.fixture
+def auth():
+    """auth(user) -> headers dict with a valid Bearer token for that user."""
+    from app.security import create_access_token
+
+    def _auth(user):
+        return {"Authorization": f"Bearer {create_access_token(user.id)}"}
+
+    return _auth

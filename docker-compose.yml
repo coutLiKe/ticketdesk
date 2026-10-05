@@ -19,6 +19,7 @@ services:
     build: ./backend
     environment:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-ticketdesk}:${POSTGRES_PASSWORD:-ticketdesk}@db:5432/${POSTGRES_DB:-ticketdesk}
+      SECRET_KEY: ${SECRET_KEY:-dev-only-secret-change-me-this-is-not-for-production}
     ports:
       - "8000:8000"
     depends_on:
