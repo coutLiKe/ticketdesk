@@ -52,3 +52,8 @@ class FailureCounter:
 #     that someone can briefly block a victim's logins, which we accept over account takeover.
 per_client = FailureCounter(max_failures=5, window_seconds=15 * 60)
 per_email = FailureCounter(max_failures=20, window_seconds=15 * 60)
+
+# Registration costs a bcrypt hash and creates a row, so cap attempts per client address:
+# 10 an hour. Every attempt counts, successful or not. (The address comes from
+# X-Forwarded-For behind a proxy, so a determined caller can vary it; this stops casual abuse.)
+register_attempts = FailureCounter(max_failures=10, window_seconds=60 * 60)

@@ -4,7 +4,7 @@ from sqlalchemy.exc import IntegrityError
 
 from app.deps import DbSession
 from app.models import Role, User
-from app.ratelimit import per_client, per_email
+from app.ratelimit import per_client, per_email, register_attempts
 from app.schemas import LoginRequest, TokenResponse, UserCreate, UserRead
 from app.security import create_access_token, hash_password, verify_password
 
@@ -16,7 +16,16 @@ _DUMMY_HASH = hash_password("timing-equaliser")
 
 
 @router.post("/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)
-def register(data: UserCreate, db: DbSession) -> User:
+def register(data: UserCreate, request: Request, db: DbSession) -> User:
+    client = request.client.host if request.client else "unknown"
+    if register_attempts.is_blocked(client):
+        raise HTTPException(
+            status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many sign-ups from this address. Try again later.",
+            headers={"Retry-After": str(register_attempts.retry_after(client))},
+        )
+    register_attempts.record(client)
+
     user = User(
         email=data.email,
         full_name=data.full_name,

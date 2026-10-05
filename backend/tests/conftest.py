@@ -187,4 +187,5 @@ def reset_login_rate_limits():
 
     ratelimit.per_client.reset()
     ratelimit.per_email.reset()
+    ratelimit.register_attempts.reset()
     yield
