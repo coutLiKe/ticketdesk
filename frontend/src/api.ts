@@ -63,6 +63,8 @@ export interface Page<T> {
 // "https://ticketdesk-api.onrender.com" (no trailing slash).
 const API_BASE: string = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ?? "/api";
 
+import { trackSlow } from "./slowRequests";
+
 const TOKEN_KEY = "ticketdesk_token";
 
 // localStorage survives page reloads but is readable by any script on the page (XSS risk).
@@ -121,11 +123,13 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   if (token) headers.Authorization = `Bearer ${token}`;
   if (body !== undefined) headers["Content-Type"] = "application/json";
 
-  const response = await fetch(`${API_BASE}${path}`, {
-    method,
-    headers,
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
+  const response = await trackSlow(
+    fetch(`${API_BASE}${path}`, {
+      method,
+      headers,
+      body: body === undefined ? undefined : JSON.stringify(body),
+    }),
+  );
 
   if (response.status === 204) return undefined as T;
   const data: unknown = await response.json().catch(() => null);

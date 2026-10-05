@@ -105,3 +105,5 @@ ul.comments li.internal { background: color-mix(in srgb, #f2c94c 18%, transparen
 .comment-head { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; flex-wrap: wrap; }
 .comment-head .small { margin-left: auto; }
 .internal-tag { background: color-mix(in srgb, #f2c94c 45%, transparent); }
+
+.notice { background: color-mix(in srgb, #f2c94c 22%, transparent); border: 1px solid color-mix(in srgb, #f2c94c 55%, var(--border)); padding: 0.5rem 0.75rem; border-radius: 6px; margin: 0 0 0.75rem; font-size: 0.9rem; }

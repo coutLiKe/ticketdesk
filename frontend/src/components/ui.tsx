@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useServerSlow } from "../slowRequests";
 
 export function label(value: string): string {
   return value.replace("_", " ");
@@ -47,4 +48,15 @@ export function Card({ title, actions, children }: { title?: string; actions?: R
 
 export function formatDate(iso: string): string {
   return new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+}
+
+/** Shown when the API is slow to answer, which on the free host usually means it is waking up. */
+export function WakingNotice() {
+  const slow = useServerSlow();
+  if (!slow) return null;
+  return (
+    <p className="notice" role="status">
+      The server is waking up (free hosting sleeps when idle). This can take up to a minute.
+    </p>
+  );
 }

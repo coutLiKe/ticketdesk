@@ -14,6 +14,15 @@ and a deployment. The stack is FastAPI, PostgreSQL and React.
 
 ![Ticket list](docs/screenshots/tickets-staff.png)
 
+**Highlights**
+- Permissions are enforced on the server for every endpoint and tested for each role, including
+  the cases where access should be refused.
+- Hidden records return 404 rather than 403, and the role is read from the database on every
+  request, so a deactivated user is locked out immediately.
+- Tests run against a real PostgreSQL built from the actual migrations (322 backend tests, 97%
+  coverage, plus front-end tests). CI also checks that both Docker images build.
+- It is deployed on free tiers (Render, Neon, GitHub Pages) and starts locally with one command.
+
 ## Try the demo
 
 The API runs on a free host that goes to sleep when idle, so the first request after a quiet
@@ -149,19 +158,9 @@ A few details:
 
 ## API
 
-The interactive docs at `/docs` list everything. In short:
-
-| Area | Endpoints |
-|---|---|
-| Auth | `POST /auth/register`, `POST /auth/login` |
-| Users | `GET /users/me`, `GET /users` and `PATCH /users/{id}` (admin), `GET /users/assignable` and `GET /users/directory` (staff) |
-| Tickets | `POST /tickets`, `GET /tickets`, `GET /tickets/{id}`, `PUT /tickets/{id}/status`, `PUT /tickets/{id}/priority`, `PUT /tickets/{id}/assignee` |
-| Comments | `POST /tickets/{id}/comments`, `GET /tickets/{id}/comments` |
-| Assets | `POST /assets`, `GET /assets`, `GET /assets/{id}`, `PATCH /assets/{id}`, `PUT /assets/{id}/assignee`, `POST /assets/{id}/retire`, `GET /assets/{id}/tickets` |
-| Assets on tickets | `GET /tickets/{id}/assets`, `PUT` and `DELETE /tickets/{id}/assets/{asset_id}` |
-| Health | `GET /health` |
-
-List endpoints return `{items, total, limit, offset}`.
+Every endpoint is listed, with request and response shapes, in the interactive docs at
+[`/docs`](https://ticketdesk-api-idro.onrender.com/docs). List endpoints return
+`{items, total, limit, offset}`.
 
 ## Tests and CI
 
@@ -169,11 +168,11 @@ List endpoints return `{items, total, limit, offset}`.
 cd backend
 python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
 docker compose up -d db                  # the tests need PostgreSQL on localhost:5432
-.venv/bin/pytest --cov=app               # 319 tests, about 99% coverage
+.venv/bin/pytest --cov=app               # 322 tests, about 97% coverage (CI requires 95%)
 .venv/bin/ruff check . && .venv/bin/ruff format --check .
 
 cd ../frontend
-npm ci && npm run lint && npm run build
+npm ci && npm run lint && npm test && npm run build
 ```
 
 - Each endpoint is tested for the normal case, bad input, a missing token (401), the wrong role
@@ -182,8 +181,11 @@ npm ci && npm run lint && npm run build
   Alembic migrations, so every test run also checks that the migrations work. Each test runs in a
   transaction that gets rolled back.
 - One test fails if a model is changed without a matching migration.
-- GitHub Actions runs lint and tests for the backend (with a PostgreSQL container) and lint and a
-  build for the front end on every push. A second workflow publishes the front end to GitHub Pages.
+- The front end has Vitest and Testing Library tests for the API client, the login page, the
+  status-action rules and role-based routing.
+- GitHub Actions runs lint and tests for the backend (with a PostgreSQL container and a coverage
+  floor), lint, tests and a build for the front end, and a build of both Docker images, on every
+  push. A second workflow publishes the front end to GitHub Pages. Dependabot proposes updates.
 
 ## Design notes
 
@@ -214,10 +216,13 @@ npm ci && npm run lint && npm run build
 - Tokens last an hour and there are no refresh tokens. The login limiter keeps its counts in
   memory, so it only works for a single instance and resets on restart.
 - There are no email notifications, attachments or audit log.
+- Status and comment checks read a ticket and then write it without locking, so two simultaneous
+  requests could race (for example a comment landing just after a ticket is closed).
+- Registering with an address that already exists returns 409, which reveals that the address is
+  in use. Sign-ups are rate-limited per address.
 - The demo API sleeps when idle, which is a limit of the free plan.
 
-Notes on how the hosting was chosen and set up are in [docs/deployment.md](docs/deployment.md) and
-[docs/deploy-runbook.md](docs/deploy-runbook.md).
+How it is hosted, configured and redeployed is described in [docs/deployment.md](docs/deployment.md).
 
 ## More screenshots
 
@@ -230,3 +235,7 @@ Notes on how the hosting was chosen and set up are in [docs/deployment.md](docs/
 
 To regenerate them, run the app with the demo data and then `node scripts/screenshots.mjs`. It
 uses your local Chrome.
+
+## License
+
+MIT. See [LICENSE](LICENSE).

@@ -27,6 +27,8 @@ jobs:
       VITE_BASE: /ticketdesk/
       # Public address of the API (not a secret). Baked into the JavaScript at build time.
       VITE_API_URL: https://ticketdesk-api-idro.onrender.com
+      # Show one-click demo login buttons (the hosted demo has seeded accounts).
+      VITE_DEMO_LOGINS: "true"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

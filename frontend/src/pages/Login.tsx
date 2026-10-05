@@ -1,8 +1,17 @@
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../auth";
-import { ErrorNote } from "../components/ui";
+import { ErrorNote, WakingNotice } from "../components/ui";
 import { errorMessage } from "../useApi";
+
+// The hosted demo sets VITE_DEMO_LOGINS=true to show one-click buttons that fill in the form.
+const SHOW_DEMO_LOGINS = import.meta.env.VITE_DEMO_LOGINS === "true";
+const DEMO_PASSWORD = "demo1234";
+const DEMO_ACCOUNTS = [
+  { label: "Requester", email: "rita@ticketdesk.dev" },
+  { label: "Technician", email: "tom@ticketdesk.dev" },
+  { label: "Admin", email: "admin@ticketdesk.dev" },
+];
 
 export default function Login() {
   const { login } = useAuth();
@@ -10,6 +19,12 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  function fill(demoEmail: string) {
+    setEmail(demoEmail);
+    setPassword(DEMO_PASSWORD);
+    setError(null);
+  }
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -36,6 +51,7 @@ export default function Login() {
           Password
           <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
         </label>
+        <WakingNotice />
         <ErrorNote message={error} />
         <button className="primary" disabled={busy}>
           {busy ? "Signing in…" : "Sign in"}
@@ -43,7 +59,20 @@ export default function Login() {
         <p className="muted small">
           No account? <Link to="/register">Register</Link>
         </p>
-        <p className="muted small demo">Demo: admin@ticketdesk.dev, tom@ticketdesk.dev or rita@ticketdesk.dev, password demo1234</p>
+        {SHOW_DEMO_LOGINS ? (
+          <div className="demo">
+            <p className="muted small">Demo accounts (made-up data, password demo1234):</p>
+            <div className="row">
+              {DEMO_ACCOUNTS.map((a) => (
+                <button type="button" key={a.email} onClick={() => fill(a.email)}>
+                  {a.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <p className="muted small demo">Demo: admin@ticketdesk.dev, tom@ticketdesk.dev or rita@ticketdesk.dev, password demo1234</p>
+        )}
       </form>
     </div>
   );

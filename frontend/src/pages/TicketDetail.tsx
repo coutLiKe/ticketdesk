@@ -1,27 +1,10 @@
 import { useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
-import { api, PRIORITIES, type Priority, type Ticket, type TicketStatus } from "../api";
+import { api, PRIORITIES, type Priority, type Ticket } from "../api";
 import { isStaff, useAuth } from "../auth";
 import { Badge, Card, ErrorNote, formatDate } from "../components/ui";
+import { nextActions } from "../ticketActions";
 import { errorMessage, useApi } from "../useApi";
-
-// Mirrors the server's state machine so we only offer moves the API will accept.
-// The server re-checks every move; this is for convenience, not security.
-function nextActions(status: TicketStatus, staff: boolean): { to: TicketStatus; text: string }[] {
-  switch (status) {
-    case "open":
-      return staff ? [{ to: "in_progress", text: "Start work" }] : [];
-    case "in_progress":
-      return staff ? [{ to: "resolved", text: "Mark resolved" }] : [];
-    case "resolved":
-      return [
-        { to: "closed", text: "Close ticket" },
-        { to: "in_progress", text: "Reopen" },
-      ];
-    default:
-      return [];
-  }
-}
 
 export default function TicketDetail() {
   const id = Number(useParams().id);

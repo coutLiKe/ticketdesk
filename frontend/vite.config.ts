@@ -1,5 +1,5 @@
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 
 // The browser only ever talks to this dev server. Requests to /api/... are forwarded to the
 // FastAPI container, so the page and the API share one origin and no CORS setup is needed.
@@ -12,6 +12,10 @@ const base = process.env.VITE_BASE ?? "/";
 export default defineConfig({
   base,
   plugins: [react()],
+  test: {
+    environment: "jsdom",
+    setupFiles: ["./src/test/setup.ts"],
+  },
   server: {
     port: 5173,
     proxy: {

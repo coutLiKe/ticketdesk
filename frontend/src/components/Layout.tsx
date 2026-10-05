@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../auth";
+import { WakingNotice } from "./ui";
 
 export default function Layout() {
   const { user, logout } = useAuth();
@@ -21,6 +22,7 @@ export default function Layout() {
         </button>
       </header>
       <main className="container">
+        <WakingNotice />
         <Outlet />
       </main>
     </>
