@@ -39,7 +39,8 @@ All demo accounts use the password `demo1234`:
 Everything in the demo is made-up data, and the passwords are public, so please don't enter
 anything real. You can also register your own account, which starts as a requester.
 
-Things to try: log in as Rita and as Tom and compare the same ticket. Tom can see an internal
+Things to try: on the login page, the Requester, Technician and Admin buttons fill in a demo
+account for you. Log in as Rita and as Tom and compare the same ticket. Tom can see an internal
 note that Rita can't, and he can change priority and assignee while she can't.
 
 ## What it does
@@ -185,7 +186,7 @@ npm ci && npm run lint && npm test && npm run build
   status-action rules and role-based routing.
 - GitHub Actions runs lint and tests for the backend (with a PostgreSQL container and a coverage
   floor), lint, tests and a build for the front end, and a build of both Docker images, on every
-  push. A second workflow publishes the front end to GitHub Pages. Dependabot proposes updates.
+  push. A second workflow publishes the front end to GitHub Pages. Dependabot proposes dependency updates monthly.
 
 ## Design notes
 
