@@ -137,3 +137,17 @@ def make_ticket(db):
         return ticket
 
     return _make
+
+
+@pytest.fixture
+def make_comment(db):
+    """Factory: make_comment(ticket, author, body=..., is_internal=...)."""
+    from app.models import Comment
+
+    def _make(ticket, author, body="a comment", is_internal=False):
+        comment = Comment(ticket=ticket, author=author, body=body, is_internal=is_internal)
+        db.add(comment)
+        db.flush()
+        return comment
+
+    return _make
