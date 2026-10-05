@@ -8,7 +8,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data   # data survives container restarts
     ports:
-      - "5432:5432"                       # exposed so tests/tools on your Mac can connect
+      - "127.0.0.1:5432:5432"              # reachable from your Mac only, not the network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
@@ -21,7 +21,7 @@ services:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-ticketdesk}:${POSTGRES_PASSWORD:-ticketdesk}@db:5432/${POSTGRES_DB:-ticketdesk}
       SECRET_KEY: ${SECRET_KEY:-dev-only-secret-change-me-this-is-not-for-production}
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     depends_on:
       db:
         condition: service_healthy        # start only once Postgres accepts connections
@@ -38,7 +38,7 @@ services:
     volumes:
       - ./frontend/src:/app/src           # edit code on your Mac, the browser reloads live
     ports:
-      - "5173:5173"
+      - "127.0.0.1:5173:5173"
     depends_on:
       - api
 

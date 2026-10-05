@@ -1,6 +1,14 @@
 name: CI
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A newer push to the same branch cancels the run that is still going.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   backend:
@@ -34,7 +42,7 @@ jobs:
       - name: Lint
         run: ruff check . && ruff format --check .
       - name: Test
-        run: pytest -q --cov=app --cov-report=term-missing
+        run: pytest -q --cov=app --cov-report=term-missing --cov-fail-under=95
 
   frontend:
     runs-on: ubuntu-latest
@@ -53,3 +61,11 @@ jobs:
         run: npm run lint
       - name: Type-check and build
         run: npm run build
+
+  docker:
+    # Proves both images still build, since Render and Compose depend on them.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build ./backend
+      - run: docker build ./frontend
