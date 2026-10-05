@@ -34,7 +34,7 @@ jobs:
       - name: Lint
         run: ruff check . && ruff format --check .
       - name: Test
-        run: pytest -q
+        run: pytest -q --cov=app --cov-report=term-missing
 
   frontend:
     runs-on: ubuntu-latest
