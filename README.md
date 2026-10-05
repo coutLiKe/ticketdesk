@@ -97,7 +97,10 @@ backend/
     deps.py            get_current_user, require_roles, StaffUser
     ticket_rules.py    ticket state machine and status permissions (pure functions)
     routers/           auth, users, tickets, comments, assets, ticket_assets
-    seed.py            idempotent demo data
+    seed.py            idempotent demo data (never for production)
+    make_admin.py      promote a registered user to admin (first admin in production)
+    ratelimit.py       in-memory failed-login limiter
+    cors.py            CORS setup from the CORS_ORIGINS setting
   alembic/versions/    database migrations
   tests/               pytest suite (real PostgreSQL)
 frontend/src/          React app: pages/, components/, api.ts, auth.tsx
@@ -149,7 +152,7 @@ List endpoints return `{items, total, limit, offset}`.
 cd backend
 python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
 docker compose up -d db            # tests need PostgreSQL on localhost:5432
-.venv/bin/pytest --cov=app         # 293 tests, ~99% coverage
+.venv/bin/pytest --cov=app         # 319 tests, ~99% coverage
 .venv/bin/ruff check . && .venv/bin/ruff format --check .
 
 cd ../frontend
@@ -195,9 +198,12 @@ npm ci && npm run lint && npm run build
   serve them (and proxy `/api`) from nginx.
 - Migrations run on API start-up. With several API replicas, run them as a separate one-off job.
 - Search uses `ILIKE`; PostgreSQL full-text search would scale better.
-- Tokens last 60 minutes and there is no refresh-token flow or rate limiting on login.
+- Tokens last 60 minutes and there is no refresh-token flow. Login is rate-limited, but the
+  counters live in memory (one instance only, reset on restart).
 - No email notifications, attachments or audit log.
-- Not deployed yet. Free hosting options and their limits are in [docs/deployment.md](docs/deployment.md).
+- Not deployed yet. The chosen setup (Render + Neon + Cloudflare Pages) is prepared: see
+  [docs/deploy-runbook.md](docs/deploy-runbook.md), and [docs/deployment.md](docs/deployment.md)
+  for the options compared.
 
 ## Regenerating the screenshots
 

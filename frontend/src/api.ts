@@ -58,6 +58,11 @@ export interface Page<T> {
   offset: number;
 }
 
+// Where the API lives. Locally "/api" is proxied by the dev server. For a deployment where the
+// front end and API are on different domains, set VITE_API_URL at build time, e.g.
+// "https://ticketdesk-api.onrender.com" (no trailing slash).
+const API_BASE: string = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ?? "/api";
+
 const TOKEN_KEY = "ticketdesk_token";
 
 // localStorage survives page reloads but is readable by any script on the page (XSS risk).
@@ -116,7 +121,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   if (token) headers.Authorization = `Bearer ${token}`;
   if (body !== undefined) headers["Content-Type"] = "application/json";
 
-  const response = await fetch(`/api${path}`, {
+  const response = await fetch(`${API_BASE}${path}`, {
     method,
     headers,
     body: body === undefined ? undefined : JSON.stringify(body),
