@@ -3,7 +3,7 @@ from typing import Self
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 
-from app.models import Priority, Role, TicketStatus
+from app.models import AssetStatus, AssetType, Priority, Role, TicketStatus
 
 
 class UserCreate(BaseModel):
@@ -158,3 +158,73 @@ class CommentRead(BaseModel):
     body: str
     is_internal: bool
     created_at: datetime
+
+
+# ---- Assets --------------------------------------------------------------------------
+
+
+class AssetCreate(BaseModel):
+    """Status and assignee are not accepted here: they change only through their own
+    endpoints, so an asset's status can't contradict who holds it."""
+
+    asset_tag: str = Field(min_length=1, max_length=50)
+    name: str = Field(min_length=1, max_length=120)
+    type: AssetType
+    serial_number: str | None = Field(default=None, max_length=100)
+
+    @field_validator("asset_tag")
+    @classmethod
+    def normalise_tag(cls, value: str) -> str:
+        value = value.strip().upper()  # "lt-100" and "LT-100" are the same asset
+        if not value:
+            raise ValueError("must not be blank")
+        return value
+
+    @field_validator("name")
+    @classmethod
+    def not_blank(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("must not be blank")
+        return value
+
+    @field_validator("serial_number")
+    @classmethod
+    def blank_serial_is_none(cls, value: str | None) -> str | None:
+        return (value or "").strip() or None
+
+
+class AssetUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=120)
+    type: AssetType | None = None
+    serial_number: str | None = Field(default=None, max_length=100)
+
+    @model_validator(mode="after")
+    def at_least_one_field(self) -> Self:
+        if self.name is None and self.type is None and self.serial_number is None:
+            raise ValueError("provide name, type and/or serial_number")
+        return self
+
+
+class AssetRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    asset_tag: str
+    name: str
+    type: AssetType
+    serial_number: str | None
+    status: AssetStatus
+    assigned_user: UserBrief | None
+    created_at: datetime
+
+
+class AssetPage(BaseModel):
+    items: list[AssetRead]
+    total: int
+    limit: int
+    offset: int
+
+
+class AssetAssigneeUpdate(BaseModel):
+    user_id: int | None  # required; null means "return to stock"

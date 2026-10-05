@@ -54,3 +54,7 @@ def require_roles(*allowed: Role):
         return user
 
     return checker
+
+
+# Technicians and admins. Used as a parameter type: `def route(user: StaffUser, ...)`.
+StaffUser = Annotated[User, Depends(require_roles(Role.TECHNICIAN, Role.ADMIN))]

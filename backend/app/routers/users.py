@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 
-from app.deps import CurrentUser, DbSession, require_roles
+from app.deps import CurrentUser, DbSession, StaffUser, require_roles
 from app.models import Role, User
 from app.schemas import UserAdminUpdate, UserRead
 
@@ -18,9 +18,7 @@ def read_me(user: CurrentUser) -> User:
 
 
 @router.get("/assignable", response_model=list[UserRead])
-def list_assignable_users(
-    _: Annotated[User, Depends(require_roles(Role.TECHNICIAN, Role.ADMIN))], db: DbSession
-) -> list[User]:
+def list_assignable_users(_: StaffUser, db: DbSession) -> list[User]:
     """Who a ticket can be assigned to: active technicians and admins."""
     return list(
         db.scalars(

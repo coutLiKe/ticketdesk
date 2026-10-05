@@ -1,11 +1,11 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, HTTPException, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import joinedload
 
-from app.deps import CurrentUser, DbSession, require_roles
-from app.models import Priority, Role, Ticket, TicketStatus, User
+from app.deps import CurrentUser, DbSession, StaffUser
+from app.models import Priority, Ticket, TicketStatus, User
 from app.schemas import (
     AssigneeUpdate,
     PriorityUpdate,
@@ -18,8 +18,6 @@ from app.ticket_rules import is_valid_transition, may_change_status
 from app.utils import escape_like
 
 router = APIRouter(prefix="/tickets", tags=["tickets"])
-
-StaffUser = Annotated[User, Depends(require_roles(Role.TECHNICIAN, Role.ADMIN))]
 
 
 def get_visible_ticket(db: DbSession, user: User, ticket_id: int) -> Ticket:
