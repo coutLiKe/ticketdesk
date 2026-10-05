@@ -1,4 +1,9 @@
-# M4 spec: ticket comments (you implement this)
+# M4 spec: ticket comments
+
+> History: this was written as a learning exercise for the project owner to implement.
+> At the owner's request, Claude implemented it instead
+> (`backend/app/routers/comments.py`), so the sections below describe the finished behaviour
+> and double as study notes.
 
 Goal: make `pytest tests/test_comments.py` pass by implementing the two routes in
 [`backend/app/routers/comments.py`](../backend/app/routers/comments.py). The schemas
