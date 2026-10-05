@@ -1,9 +1,11 @@
 from fastapi import FastAPI
 
 from app.config import settings
+from app.cors import add_cors
 from app.routers import assets, auth, comments, ticket_assets, tickets, users
 
 app = FastAPI(title=settings.app_name)
+add_cors(app, settings.cors_origins)
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(tickets.router)

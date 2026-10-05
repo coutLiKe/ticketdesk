@@ -178,3 +178,13 @@ def make_asset(db):
         return asset
 
     return _make
+
+
+@pytest.fixture(autouse=True)
+def reset_login_rate_limits():
+    """Failed-login counters live in memory; clear them so tests can't affect each other."""
+    from app import ratelimit
+
+    ratelimit.per_client.reset()
+    ratelimit.per_email.reset()
+    yield
