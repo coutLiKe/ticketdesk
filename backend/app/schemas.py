@@ -130,3 +130,31 @@ class PriorityUpdate(BaseModel):
 class AssigneeUpdate(BaseModel):
     # No default on purpose: the field must be present. `null` means "unassign".
     assignee_id: int | None
+
+
+# ---- Comments ------------------------------------------------------------------------
+
+
+class CommentCreate(BaseModel):
+    body: str = Field(min_length=1, max_length=5_000)
+    # Internal notes are for staff only. Requesters must not be able to create them.
+    is_internal: bool = False
+
+    @field_validator("body")
+    @classmethod
+    def not_blank(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("must not be blank")
+        return value
+
+
+class CommentRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    ticket_id: int
+    author: UserBrief
+    body: str
+    is_internal: bool
+    created_at: datetime
