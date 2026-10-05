@@ -197,7 +197,7 @@ npm ci && npm run lint && npm run build
 - Search uses `ILIKE`; PostgreSQL full-text search would scale better.
 - Tokens last 60 minutes and there is no refresh-token flow or rate limiting on login.
 - No email notifications, attachments or audit log.
-- Not deployed yet.
+- Not deployed yet. Free hosting options and their limits are in [docs/deployment.md](docs/deployment.md).
 
 ## Regenerating the screenshots
 

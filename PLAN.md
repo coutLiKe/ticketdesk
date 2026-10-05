@@ -2,14 +2,14 @@
 
 An IT ticketing and asset tracker, built as an interview-ready portfolio project.
 
-**Status:** M0 to M9 complete. M10 (deployment options research) not started; nothing is deployed.
+**Status:** M0 to M10 complete. Nothing is deployed; hosting options are in `docs/deployment.md`, waiting for your choice.
 
 | Milestone | State |
 |---|---|
 | M0 Scaffold, M1 Database, M2 Auth, M3 Tickets | done |
 | M4 Comments | done (implemented by Claude at the owner's request; the original spec and tests are in `docs/M4-comments-spec.md`) |
 | M5 Assets, M6 Seed, M7/M8 Front end, M9 Docs | done |
-| M10 Deployment options | waiting on you |
+| M10 Deployment options | research written (`docs/deployment.md`); waiting on your choice |
 
 ## Decisions so far
 
