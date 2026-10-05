@@ -1,5 +1,7 @@
 # TicketDesk
 
+[![CI](https://github.com/coutLiKe/ticketdesk/actions/workflows/ci.yml/badge.svg)](https://github.com/coutLiKe/ticketdesk/actions/workflows/ci.yml)
+
 An IT help-desk and asset tracker. Employees raise tickets, technicians work them, admins
 manage people, and every device is tracked and linked to the tickets it causes.
 
@@ -27,7 +29,7 @@ You need [Docker](https://www.docker.com/products/docker-desktop/) (Docker Deskt
 OrbStack). It runs on Apple Silicon and Intel.
 
 ```bash
-git clone <your-repo-url> ticketdesk && cd ticketdesk
+git clone https://github.com/coutLiKe/ticketdesk.git && cd ticketdesk
 cp .env.example .env
 docker compose up --build
 ```
@@ -168,8 +170,7 @@ npm ci && npm run lint && npm run build
 - GitHub Actions ([ci.yml](.github/workflows/ci.yml)) runs lint and tests (backend, with a
   PostgreSQL service container) and lint and build (front end) on every push and pull request.
 
-<!-- After pushing to GitHub, add a badge here:
-![CI](https://github.com/<owner>/<repo>/actions/workflows/ci.yml/badge.svg) -->
+
 
 ## Design decisions
 
