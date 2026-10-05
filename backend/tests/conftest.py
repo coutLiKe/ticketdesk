@@ -1,5 +1,8 @@
 import os
 
+# Must be set BEFORE the app is imported: bcrypt cost 4 keeps password hashing fast in tests.
+os.environ.setdefault("BCRYPT_ROUNDS", "4")
+
 import pytest
 from alembic import command
 from alembic.config import Config

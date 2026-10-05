@@ -11,5 +11,15 @@ class Settings(BaseSettings):
     # (alembic, pytest) on your Mac works. Inside Compose, DATABASE_URL overrides it.
     database_url: str = "postgresql+psycopg://ticketdesk:ticketdesk@localhost:5432/ticketdesk"
 
+    # Signs JWTs. Anyone who knows it can forge a login, so any real deployment MUST set
+    # its own long random value (e.g. `openssl rand -hex 32`). This default is dev-only.
+    secret_key: str = "dev-only-secret-change-me-this-is-not-for-production"
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 60
+
+    # bcrypt work factor: each +1 doubles hashing time. 12 is a sensible production value;
+    # tests lower it so creating users stays fast.
+    bcrypt_rounds: int = 12
+
 
 settings = Settings()
