@@ -1,7 +1,7 @@
 import enum
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, ForeignKey, Index, String, Table, Text, func
+from sqlalchemy import Column, DateTime, ForeignKey, Index, String, Table, Text, false, func
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -120,7 +120,9 @@ class Ticket(Base):
     requester: Mapped[User] = relationship(foreign_keys=[requester_id])
     assignee: Mapped[User | None] = relationship(foreign_keys=[assignee_id])
     comments: Mapped[list["Comment"]] = relationship(
-        back_populates="ticket", cascade="all, delete-orphan", order_by="Comment.created_at"
+        back_populates="ticket",
+        cascade="all, delete-orphan",
+        order_by="Comment.created_at, Comment.id",
     )
     assets: Mapped[list["Asset"]] = relationship(secondary=ticket_assets, back_populates="tickets")
 
@@ -134,6 +136,9 @@ class Comment(Base):
     ticket_id: Mapped[int] = mapped_column(ForeignKey("tickets.id", ondelete="CASCADE"))
     author_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
     body: Mapped[str] = mapped_column(Text)
+    # Internal notes are visible to staff only. server_default lets the migration add this
+    # NOT NULL column to a table that already has rows.
+    is_internal: Mapped[bool] = mapped_column(default=False, server_default=false())
     created_at: Mapped[datetime] = created_at_column()
 
     ticket: Mapped[Ticket] = relationship(back_populates="comments")
