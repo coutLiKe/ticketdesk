@@ -1,11 +1,11 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, HTTPException, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import joinedload
 
-from app.deps import CurrentUser, DbSession, require_roles
-from app.models import Priority, Role, Ticket, TicketStatus, User
+from app.deps import CurrentUser, DbSession, StaffUser
+from app.models import Priority, Ticket, TicketStatus, User
 from app.schemas import (
     AssigneeUpdate,
     PriorityUpdate,
@@ -15,15 +15,9 @@ from app.schemas import (
     TicketRead,
 )
 from app.ticket_rules import is_valid_transition, may_change_status
+from app.utils import escape_like
 
 router = APIRouter(prefix="/tickets", tags=["tickets"])
-
-StaffUser = Annotated[User, Depends(require_roles(Role.TECHNICIAN, Role.ADMIN))]
-
-
-def _escape_like(text: str) -> str:
-    """Make %, _ and \\ match literally inside an ILIKE pattern."""
-    return text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
 
 
 def get_visible_ticket(db: DbSession, user: User, ticket_id: int) -> Ticket:
@@ -86,7 +80,7 @@ def list_tickets(
     if requester_id is not None:
         conditions.append(Ticket.requester_id == requester_id)
     if q:
-        pattern = f"%{_escape_like(q)}%"
+        pattern = f"%{escape_like(q)}%"
         conditions.append(
             Ticket.title.ilike(pattern, escape="\\")
             | Ticket.description.ilike(pattern, escape="\\")

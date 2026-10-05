@@ -151,3 +151,30 @@ def make_comment(db):
         return comment
 
     return _make
+
+
+@pytest.fixture
+def make_asset(db):
+    """Factory: make_asset(tag=..., assigned_to=user, status=..., type=...). Tags auto-increment."""
+    from app.models import Asset, AssetStatus, AssetType
+
+    counter = 0
+
+    def _make(tag=None, assigned_to=None, status=None, type=AssetType.LAPTOP, **kw):
+        nonlocal counter
+        counter += 1
+        if status is None:
+            status = AssetStatus.ASSIGNED if assigned_to else AssetStatus.IN_STOCK
+        asset = Asset(
+            asset_tag=tag or f"AST-{counter:04d}",
+            name=kw.pop("name", f"Device {counter}"),
+            type=type,
+            status=status,
+            assigned_user=assigned_to,
+            **kw,
+        )
+        db.add(asset)
+        db.flush()
+        return asset
+
+    return _make
