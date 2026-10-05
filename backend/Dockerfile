@@ -18,4 +18,5 @@ RUN useradd --create-home appuser
 USER appuser
 
 EXPOSE 8000
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Apply pending migrations, then start the server. `exec` lets uvicorn receive stop signals.
+CMD ["sh", "-c", "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8000"]
