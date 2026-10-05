@@ -202,7 +202,7 @@ npm ci && npm run lint && npm run build
 - Tokens last 60 minutes and there is no refresh-token flow. Login is rate-limited, but the
   counters live in memory (one instance only, reset on restart).
 - No email notifications, attachments or audit log.
-- Not deployed yet. The chosen setup (Render + Neon + Cloudflare Pages) is prepared: see
+- Not deployed yet. Hosting: Render (API) + Neon (PostgreSQL) + GitHub Pages (front end). See
   [docs/deploy-runbook.md](docs/deploy-runbook.md), and [docs/deployment.md](docs/deployment.md)
   for the options compared.
 

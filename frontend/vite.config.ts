@@ -5,7 +5,12 @@ import { defineConfig } from "vite";
 // FastAPI container, so the page and the API share one origin and no CORS setup is needed.
 const apiTarget = process.env.API_TARGET ?? "http://localhost:8000";
 
+// Where the built site is served from. "/" locally; a GitHub Pages project site lives under
+// "/<repo>/", which the deploy workflow sets through VITE_BASE.
+const base = process.env.VITE_BASE ?? "/";
+
 export default defineConfig({
+  base,
   plugins: [react()],
   server: {
     port: 5173,

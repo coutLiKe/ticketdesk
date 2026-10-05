@@ -18,4 +18,4 @@ services:
       - key: DATABASE_URL
         sync: false                 # you paste the Neon connection string in the dashboard
       - key: CORS_ORIGINS
-        sync: false                 # your Cloudflare Pages URL, set after the front end exists
+        value: https://coutlike.github.io   # the front end's origin (scheme + host, no path)

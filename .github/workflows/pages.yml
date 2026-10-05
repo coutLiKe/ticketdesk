@@ -1,0 +1,54 @@
+name: Deploy front end to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths: ["frontend/**", ".github/workflows/pages.yml"]
+  workflow_dispatch:
+
+# Pages needs permission to publish, and only one deploy may run at a time.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      # The site lives at https://<owner>.github.io/<repo>/, so assets need that base path.
+      VITE_BASE: /ticketdesk/
+      # Public address of the API (not a secret). Baked into the JavaScript at build time.
+      VITE_API_URL: https://ticketdesk-api-idro.onrender.com
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      # GitHub Pages shows 404.html for unknown paths. Serving the app there lets deep links
+      # such as /ticketdesk/tickets/3 work on reload (React Router then renders the page).
+      - run: cp dist/index.html dist/404.html
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: frontend/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

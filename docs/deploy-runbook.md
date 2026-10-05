@@ -1,10 +1,13 @@
-# Deploy runbook: Render + Neon + Cloudflare Pages
+# Deploy runbook: Render + Neon + GitHub Pages
 
-You do the account steps (sign-ups, pasting secrets, clicking Deploy). Everything in the repo
-is already prepared: `render.yaml`, the production settings, and the front-end build.
+You do the account steps (sign-ups, pasting secrets). Everything in the repo is already
+prepared: `render.yaml`, the production settings, and the GitHub Pages workflow.
+
+> Change of plan: the front end is hosted on **GitHub Pages**, not Cloudflare Pages. It needs no
+> extra account or card and deploys from code (`.github/workflows/pages.yml`).
 
 ```
-Browser ──> Cloudflare Pages (static React build)
+Browser ──> GitHub Pages (static React build)
    │
    └─ API calls (CORS) ──> Render web service (FastAPI Docker image) ──> Neon PostgreSQL
 ```
@@ -18,7 +21,7 @@ intent: **settings go in each provider's dashboard, never into git.**
 
 ## 0. Put the code on GitHub
 
-Render and Cloudflare Pages both deploy from a Git repository.
+Render and GitHub Pages both deploy from this repository.
 
 1. Create an empty repository on GitHub (private is fine). Do not add a README or licence.
 2. From the project folder:
@@ -55,38 +58,24 @@ git push -u origin main
 
 If the service is asleep the first request takes about a minute. That is normal on the free plan.
 
-## 3. Front end: Cloudflare Pages
+## 3. Front end: GitHub Pages (automatic)
 
-1. Sign up at [cloudflare.com](https://dash.cloudflare.com), then **Workers & Pages → Create →
-   Pages → Connect to Git** and choose the repository.
-2. Build settings:
+Nothing to click once Pages is enabled. `.github/workflows/pages.yml` builds the React app on
+every push that touches `frontend/` and publishes it at
+`https://<owner>.github.io/ticketdesk/`.
 
-| Setting | Value |
-|---|---|
-| Root directory | `frontend` |
-| Build command | `npm run build` |
-| Build output directory | `dist` |
-
-3. Environment variables (production):
-
-| Name | Value |
-|---|---|
-| `VITE_API_URL` | `https://<your-service>.onrender.com` (no trailing slash) |
-| `NODE_VERSION` | `22` |
-
-`VITE_API_URL` is baked into the JavaScript at build time. If you change it, you must redeploy.
-
-4. Deploy and note the URL, for example `https://ticketdesk.pages.dev`.
-
-Pages serves `index.html` for unknown paths when there is no `404.html`, so React Router links
-such as `/tickets/3` work on reload. If you ever see a 404 on reload, add a `_redirects` file
-containing `/* /index.html 200` to `frontend/public/`.
+- One-time setting: repository **Settings → Pages → Source: GitHub Actions** (already done if you
+  used the setup in this repo's history).
+- `VITE_API_URL` (the Render address) and `VITE_BASE` (`/ticketdesk/`) are set in the workflow.
+  They are baked into the JavaScript at build time, so changing them means another run.
+- GitHub Pages serves `404.html` for unknown paths. The workflow copies `index.html` there so
+  links like `/ticketdesk/tickets/3` still work when reloaded.
 
 ## 4. Connect them (CORS)
 
-In Render, set `CORS_ORIGINS` to your exact Pages URL (scheme and host, no path, no trailing
-slash), for example `https://ticketdesk.pages.dev`, and let it redeploy. Several origins can be
-comma-separated (for example a custom domain later).
+`render.yaml` sets `CORS_ORIGINS` to `https://coutlike.github.io` (scheme and host only, never a
+path). Render applies the file whenever you push. To add another origin later (a custom domain),
+list them comma-separated.
 
 ## 5. Create the first admin
 
@@ -135,12 +124,12 @@ it, never use a real person's data, and change the admin from step 5 to a privat
   744 hours in a 31-day month, so a single service fits. A second service would not.
 - Render sleeps after 15 minutes idle; wake-up is about a minute.
 - Neon: 1 GB storage, 100 compute-hours per project per month, suspends after 5 minutes idle.
-- Cloudflare Pages: 500 builds a month.
+- GitHub Pages: free for public repositories (soft limits: 1 GB site, 100 GB bandwidth a month,
+  10 builds an hour; check GitHub's current docs).
 - **Do not point an uptime pinger at `/health` to keep Render awake.** It would burn instance
   hours and keep it from sleeping, which defeats the free plan. `/health` deliberately does not
   query the database, so health checks never wake Neon either.
-- I could not confirm whether Render and Cloudflare require a credit card. If either asks for
-  one, you decide whether to continue.
+- Render did not ask for a credit card when this was deployed.
 
 ## Troubleshooting
 
@@ -150,16 +139,16 @@ it, never use a real person's data, and change the admin from step 5 to a privat
 | Login page shows a network error right after a quiet period | The API is waking up. Wait a minute and retry. |
 | Render deploy fails with "SECRET_KEY must be set" | `ENVIRONMENT` is `production` but `SECRET_KEY` is missing or still starts with `dev-only`. |
 | Render logs: SSL or connection errors | The Neon string was truncated, or lacks `sslmode=require`. Copy it again. |
-| Pages site calls `/api/...` and gets 404 | `VITE_API_URL` was not set at build time. Set it and redeploy. |
+| The site calls `/api/...` and gets 404 | `VITE_API_URL` was not set at build time. Fix `pages.yml` and push. |
 | 429 on login for a legitimate user | Too many failed attempts; they clear after 15 minutes or when the service restarts. |
 
 ## Updating and tearing down
 
-- Updating: push to `main`. Render and Pages both redeploy automatically (`autoDeploy: true`).
+- Updating: push to `main`. Render redeploys (`autoDeploy: true`) and the Pages workflow republishes the front end.
   CI runs on the same push; a red CI does not by itself stop a deploy.
 - Rolling back: both dashboards let you redeploy an earlier build. Database migrations don't roll
   back automatically.
-- Tearing down: delete the Render service, the Pages project and the Neon project. Deleting the
+- Tearing down: delete the Render service and the Neon project, and disable Pages in repository settings. Deleting the
   Neon project deletes the data.
 
 ## Security notes for the real deployment
@@ -169,4 +158,6 @@ it, never use a real person's data, and change the admin from step 5 to a privat
 - Login rate limits are kept in memory. They reset when the service restarts or wakes from sleep,
   and the limit by IP address can be sidestepped behind a proxy. The per-email limit is the
   backstop. A shared store such as Redis would make this robust.
-- Tokens are kept in `localStorage`. See the README for the trade-off.
+- Tokens are kept in `localStorage`, which belongs to the whole origin `<owner>.github.io`, so any
+  other site you host under that name could read it. A custom domain would isolate it. See the
+  README for the wider trade-off.

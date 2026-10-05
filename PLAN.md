@@ -2,14 +2,14 @@
 
 An IT ticketing and asset tracker, built as an interview-ready portfolio project.
 
-**Status:** M0 to M10 complete, plus M11 (deployment preparation). Nothing is deployed yet: you chose Render + Neon + Cloudflare Pages, and `docs/deploy-runbook.md` has the steps that need your accounts.
+**Status:** M0 to M10 complete, plus M11 (deployment preparation). Nothing is deployed yet: you chose Render + Neon, and GitHub Pages for the front end instead of Cloudflare Pages, and `docs/deploy-runbook.md` has the steps that need your accounts.
 
 | Milestone | State |
 |---|---|
 | M0 Scaffold, M1 Database, M2 Auth, M3 Tickets | done |
 | M4 Comments | done (implemented by Claude at the owner's request; the original spec and tests are in `docs/M4-comments-spec.md`) |
 | M5 Assets, M6 Seed, M7/M8 Front end, M9 Docs | done |
-| M10 Deployment options | done (`docs/deployment.md`); you chose Render + Neon + Cloudflare Pages |
+| M10 Deployment options | done (`docs/deployment.md`); you chose Render + Neon, and GitHub Pages for the front end instead of Cloudflare Pages |
 | M11 Deployment prep | code ready and tested (CORS, production settings, rate limiting, `render.yaml`, runbook); waiting for you to create accounts and push to GitHub |
 
 ## Decisions so far
