@@ -83,6 +83,11 @@ class User(Base):
     is_active: Mapped[bool] = mapped_column(default=True)
     created_at: Mapped[datetime] = created_at_column()
 
+    @property
+    def is_staff(self) -> bool:
+        """Technicians and admins work tickets; requesters only raise them."""
+        return self.role in (Role.TECHNICIAN, Role.ADMIN)
+
 
 class Ticket(Base):
     __tablename__ = "tickets"
