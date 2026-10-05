@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+
+# Node
+node_modules/
+dist/
+
+# Local config and secrets (the .example file IS committed)
+.env
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
