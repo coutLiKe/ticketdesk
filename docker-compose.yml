@@ -31,6 +31,17 @@ services:
       timeout: 3s
       retries: 5
 
+  web:
+    build: ./frontend
+    environment:
+      API_TARGET: http://api:8000         # where the dev server proxies /api requests to
+    volumes:
+      - ./frontend/src:/app/src           # edit code on your Mac, the browser reloads live
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
+
   # Optional: not started by `docker compose up`. Run it on demand with
   #   docker compose run --rm seed
   seed:

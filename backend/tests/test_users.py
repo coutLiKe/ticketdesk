@@ -183,3 +183,27 @@ def test_admin_cannot_demote_or_deactivate_themselves(client, make_user, auth):
 
     assert demote.status_code == 409
     assert deactivate.status_code == 409
+
+
+# ---- GET /users/directory (staff only) -----------------------------------------------
+
+
+@pytest.mark.parametrize("role", [Role.TECHNICIAN, Role.ADMIN])
+def test_staff_can_see_the_user_directory_without_emails(client, make_user, auth, role):
+    me = make_user(role=role)
+    requester = make_user()
+    make_user(is_active=False)
+
+    response = client.get("/users/directory", headers=auth(me))
+
+    assert response.status_code == 200
+    assert {u["id"] for u in response.json()} == {me.id, requester.id}
+    assert all(set(u) == {"id", "full_name", "role"} for u in response.json())
+
+
+def test_requester_cannot_see_the_user_directory(client, make_user, auth):
+    assert client.get("/users/directory", headers=auth(make_user())).status_code == 403
+
+
+def test_directory_requires_login(client):
+    assert client.get("/users/directory").status_code == 401
