@@ -31,5 +31,17 @@ services:
       timeout: 3s
       retries: 5
 
+  # Optional: not started by `docker compose up`. Run it on demand with
+  #   docker compose run --rm seed
+  seed:
+    build: ./backend
+    profiles: ["seed"]
+    command: ["python", "-m", "app.seed"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-ticketdesk}:${POSTGRES_PASSWORD:-ticketdesk}@db:5432/${POSTGRES_DB:-ticketdesk}
+    depends_on:
+      api:
+        condition: service_healthy        # the API container runs migrations on startup
+
 volumes:
   pgdata:
