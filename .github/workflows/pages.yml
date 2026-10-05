@@ -30,7 +30,7 @@ jobs:
       # Show one-click demo login buttons (the hosted demo has seeded accounts).
       VITE_DEMO_LOGINS: "true"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: 22
