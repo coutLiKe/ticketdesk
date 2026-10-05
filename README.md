@@ -2,34 +2,55 @@
 
 [![CI](https://github.com/coutLiKe/ticketdesk/actions/workflows/ci.yml/badge.svg)](https://github.com/coutLiKe/ticketdesk/actions/workflows/ci.yml)
 
-An IT help-desk and asset tracker. Employees raise tickets, technicians work them, admins
-manage people, and every device is tracked and linked to the tickets it causes.
+TicketDesk is an IT help desk and asset tracker. People report problems as tickets, technicians
+work through them, and admins manage the users. Devices are tracked too, so a ticket can point at
+the laptop that's causing it.
 
-Built as a portfolio project: FastAPI + PostgreSQL + React, fully containerised, with
-role-based access control enforced on every endpoint and a test suite that checks the
-permission rules, not just the happy paths.
+I built it to practise a real backend: roles and permissions, database migrations, tests, Docker
+and a deployment. The stack is FastAPI, PostgreSQL and React.
 
-![Tickets list](docs/screenshots/tickets-staff.png)
+**Live demo:** https://coutlike.github.io/ticketdesk/
+**API docs:** https://ticketdesk-api-idro.onrender.com/docs
 
-## Features
+![Ticket list](docs/screenshots/tickets-staff.png)
 
-- **Three roles**: requester, technician, admin. JWT login. Signup always creates a
-  requester; only an admin can change roles.
-- **Tickets**: create, assign, set priority, comment, and move through
-  `open → in_progress → resolved → closed` (a resolved ticket can be reopened). Filter by
-  status, priority and assignee, search, and paginate.
-- **Internal notes**: technicians can leave comments that requesters never see.
-- **Assets**: track laptops, monitors and phones, assign them to people, retire them, and link
-  them to tickets (many-to-many).
-- **Free and open source only**: no paid services and no API keys.
+## Try the demo
 
-## Quick start
+The API runs on a free host that goes to sleep when idle, so the first request after a quiet
+spell can take up to a minute. After that it's quick.
 
-You need [Docker](https://www.docker.com/products/docker-desktop/) (Docker Desktop or
-OrbStack). It runs on Apple Silicon and Intel.
+All demo accounts use the password `demo1234`:
+
+| Role | Email |
+|---|---|
+| Admin | `admin@ticketdesk.dev` |
+| Technician | `tom@ticketdesk.dev`, `tina@ticketdesk.dev` |
+| Requester | `rita@ticketdesk.dev`, `raj@ticketdesk.dev`, `rosa@ticketdesk.dev` |
+
+Everything in the demo is made-up data, and the passwords are public, so please don't enter
+anything real. You can also register your own account, which starts as a requester.
+
+Things to try: log in as Rita and as Tom and compare the same ticket. Tom can see an internal
+note that Rita can't, and he can change priority and assignee while she can't.
+
+## What it does
+
+- Three roles: requester, technician and admin. Login uses JWT. Registration always creates a
+  requester, and only an admin can change someone's role.
+- Tickets can be created, assigned, given a priority and commented on. They move through
+  `open`, `in_progress`, `resolved` and `closed`, and a resolved ticket can be reopened. The list
+  supports filters, search and paging.
+- Technicians can write internal notes that requesters never see.
+- Assets (laptops, monitors, phones and so on) can be assigned to people, retired, and linked to
+  tickets.
+
+## Run it locally
+
+You need Docker (Docker Desktop or OrbStack). It works on Apple Silicon.
 
 ```bash
-git clone https://github.com/coutLiKe/ticketdesk.git && cd ticketdesk
+git clone https://github.com/coutLiKe/ticketdesk.git
+cd ticketdesk
 cp .env.example .env
 docker compose up --build
 ```
@@ -43,46 +64,40 @@ docker compose run --rm seed
 | What | Where |
 |---|---|
 | App | http://localhost:5173 |
-| API docs (Swagger) | http://localhost:8000/docs |
-| Postgres | localhost:5432 (user, password and database: `ticketdesk`) |
+| API docs | http://localhost:8000/docs |
+| Postgres | localhost:5432 (user, password and database are all `ticketdesk`) |
 
-Demo logins (password for all: `demo1234`):
+The demo accounts are the same as above. To start over with an empty database, run
+`docker compose down -v`.
 
-| Role | Email |
-|---|---|
-| admin | `admin@ticketdesk.dev` |
-| technician | `tom@ticketdesk.dev`, `tina@ticketdesk.dev` |
-| requester | `rita@ticketdesk.dev`, `raj@ticketdesk.dev`, `rosa@ticketdesk.dev` |
-
-Start over with an empty database: `docker compose down -v`.
-
-> The seed script uses a published password. Never run it against a real deployment, and set
-> your own `SECRET_KEY` (`openssl rand -hex 32`) anywhere beyond local development.
-
-## Architecture
+## How it fits together
 
 ```mermaid
 flowchart LR
     Browser["Browser<br/>React + TypeScript"]
-    Web["web container<br/>Vite dev server<br/>:5173"]
-    API["api container<br/>FastAPI<br/>:8000"]
-    DB[("db container<br/>PostgreSQL 16<br/>:5432")]
+    Web["web container<br/>Vite dev server :5173"]
+    API["api container<br/>FastAPI :8000"]
+    DB[("db container<br/>PostgreSQL 16 :5432")]
 
     Browser -- "pages and /api/*" --> Web
-    Web -- "proxies /api/* (same origin, no CORS)" --> API
+    Web -- "forwards /api/*" --> API
     API -- "SQLAlchemy" --> DB
     API -. "alembic upgrade head on start" .-> DB
 ```
 
-Inside the API, every request passes through the same layers:
+The deployed version differs in two ways. The front end is a static build on GitHub Pages and
+calls the API directly (so the API allows that origin with CORS). The database is a hosted
+PostgreSQL on Neon, and the API runs on Render.
+
+Every request to the API goes through the same steps:
 
 ```mermaid
 flowchart TD
-    R["HTTP request"] --> A["get_current_user<br/>verify JWT, load user, reject if inactive (401)"]
-    A --> P["require_roles / get_visible_*<br/>role check (403) and ownership scoping (404)"]
-    P --> V["Pydantic schema<br/>validate input (422)"]
-    V --> H["Route handler<br/>business rules (409 / 422)"]
-    H --> D[("PostgreSQL<br/>constraints as the last line of defence")]
+    R["HTTP request"] --> A["Check the JWT, load the user, reject inactive users (401)"]
+    A --> P["Check the role (403) and what the user may see (404)"]
+    P --> V["Validate the input with Pydantic (422)"]
+    V --> H["Route handler: business rules (409, 422)"]
+    H --> D[("PostgreSQL")]
 ```
 
 Project layout:
@@ -90,129 +105,128 @@ Project layout:
 ```
 backend/
   app/
-    main.py            app + router registration
-    config.py          settings from environment variables
-    db.py              engine, session, constraint naming convention
-    models.py          SQLAlchemy models and enums
-    schemas.py         Pydantic request/response models
-    security.py        password hashing (bcrypt) and JWT helpers
-    deps.py            get_current_user, require_roles, StaffUser
-    ticket_rules.py    ticket state machine and status permissions (pure functions)
-    routers/           auth, users, tickets, comments, assets, ticket_assets
-    seed.py            idempotent demo data (never for production)
-    make_admin.py      promote a registered user to admin (first admin in production)
-    ratelimit.py       in-memory failed-login limiter
-    cors.py            CORS setup from the CORS_ORIGINS setting
-  alembic/versions/    database migrations
-  tests/               pytest suite (real PostgreSQL)
-frontend/src/          React app: pages/, components/, api.ts, auth.tsx
-docs/                  screenshots and the M4 comments spec
-scripts/               screenshot generator
+    main.py          app and router setup
+    config.py        settings read from environment variables
+    db.py            database engine and session
+    models.py        SQLAlchemy models
+    schemas.py       Pydantic request and response models
+    security.py      bcrypt password hashing and JWT helpers
+    deps.py          get_current_user, require_roles
+    ticket_rules.py  the ticket status rules
+    routers/         auth, users, tickets, comments, assets, ticket_assets
+    seed.py          demo data (never run it on a real deployment)
+    make_admin.py    promote a registered user to admin
+    ratelimit.py     failed-login limiter
+    cors.py          CORS setup
+  alembic/versions/  database migrations
+  tests/             pytest tests, run against a real PostgreSQL
+frontend/src/        React app: pages/, components/, api.ts, auth.tsx
+docs/                screenshots and deployment notes
+scripts/             screenshot generator
 ```
 
 ## Permissions
 
 | Action | Requester | Technician | Admin |
 |---|---|---|---|
-| Register, log in, view own profile | yes | yes | yes |
+| Register, log in, see own profile | yes | yes | yes |
 | Create a ticket | yes | yes | yes |
 | View tickets | own only | all | all |
 | Comment on a ticket | own tickets | all | all |
-| Post an internal note, see internal notes | no | yes | yes |
+| Write or read internal notes | no | yes | yes |
 | Set priority, assign a ticket | no | yes | yes |
-| Change ticket status | close or reopen own *resolved* ticket | any valid move | any valid move |
-| View assets | assigned to them | all | all |
-| Create, edit, assign, retire assets; link assets to tickets | no | yes | yes |
-| List all users, change roles, deactivate users | no | no | yes |
+| Change ticket status | close or reopen own resolved ticket | any valid move | any valid move |
+| View assets | ones assigned to them | all | all |
+| Create, edit, assign or retire assets; link them to tickets | no | yes | yes |
+| List users, change roles, deactivate users | no | no | yes |
 
-Rules worth knowing:
-- A ticket you can't see returns **404**, not 403, so its existence isn't revealed.
-- **401** means "not logged in or invalid token". **403** means "logged in, not allowed".
-- A closed ticket is final: no new comments, priority, assignee or asset changes.
-- Roles are read from the database on every request, so a role change or deactivation takes
-  effect immediately, even for tokens already issued.
+A few details:
+- A ticket you aren't allowed to see returns 404 rather than 403, so its existence isn't revealed.
+- 401 means you aren't logged in (or the token is bad). 403 means you're logged in but not allowed.
+- Closed tickets are final: no new comments and no priority, assignee or asset changes.
+- The user's role is read from the database on every request, so a role change or deactivation
+  applies immediately, even to tokens that were already issued.
 
-## API overview
+## API
 
-Interactive docs live at `/docs`. Summary:
+The interactive docs at `/docs` list everything. In short:
 
 | Area | Endpoints |
 |---|---|
 | Auth | `POST /auth/register`, `POST /auth/login` |
-| Users | `GET /users/me`, `GET /users` (admin), `PATCH /users/{id}` (admin), `GET /users/assignable` and `GET /users/directory` (staff) |
+| Users | `GET /users/me`, `GET /users` and `PATCH /users/{id}` (admin), `GET /users/assignable` and `GET /users/directory` (staff) |
 | Tickets | `POST /tickets`, `GET /tickets`, `GET /tickets/{id}`, `PUT /tickets/{id}/status`, `PUT /tickets/{id}/priority`, `PUT /tickets/{id}/assignee` |
 | Comments | `POST /tickets/{id}/comments`, `GET /tickets/{id}/comments` |
 | Assets | `POST /assets`, `GET /assets`, `GET /assets/{id}`, `PATCH /assets/{id}`, `PUT /assets/{id}/assignee`, `POST /assets/{id}/retire`, `GET /assets/{id}/tickets` |
-| Ticket ↔ asset | `GET /tickets/{id}/assets`, `PUT` and `DELETE /tickets/{id}/assets/{asset_id}` |
+| Assets on tickets | `GET /tickets/{id}/assets`, `PUT` and `DELETE /tickets/{id}/assets/{asset_id}` |
 | Health | `GET /health` |
 
 List endpoints return `{items, total, limit, offset}`.
 
-## Tests, lint and CI
+## Tests and CI
 
 ```bash
 cd backend
 python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
-docker compose up -d db            # tests need PostgreSQL on localhost:5432
-.venv/bin/pytest --cov=app         # 319 tests, ~99% coverage
+docker compose up -d db                  # the tests need PostgreSQL on localhost:5432
+.venv/bin/pytest --cov=app               # 319 tests, about 99% coverage
 .venv/bin/ruff check . && .venv/bin/ruff format --check .
 
 cd ../frontend
 npm ci && npm run lint && npm run build
 ```
 
-- Every endpoint has tests for the happy path, bad input, **401 (no token)**, **403 (wrong
-  role)** and **404 (not yours)**.
-- Tests run against a real PostgreSQL database (`ticketdesk_test`, created automatically).
-  The schema is built by running the real Alembic migrations, so each run also proves the
-  migrations work. Each test runs in a transaction that is rolled back.
-- `test_migrations_match_models` fails if a model changes without a new migration.
-- GitHub Actions ([ci.yml](.github/workflows/ci.yml)) runs lint and tests (backend, with a
-  PostgreSQL service container) and lint and build (front end) on every push and pull request.
+- Each endpoint is tested for the normal case, bad input, a missing token (401), the wrong role
+  (403) and someone else's data (404).
+- The tests use a real PostgreSQL database, not SQLite. The schema is created by running the
+  Alembic migrations, so every test run also checks that the migrations work. Each test runs in a
+  transaction that gets rolled back.
+- One test fails if a model is changed without a matching migration.
+- GitHub Actions runs lint and tests for the backend (with a PostgreSQL container) and lint and a
+  build for the front end on every push. A second workflow publishes the front end to GitHub Pages.
 
+## Design notes
 
+- All permission checks are on the server. The UI hides buttons people can't use, but that is only
+  for convenience.
+- Each rule lives in one place: `get_visible_ticket` and `get_visible_asset` decide what a user can
+  see, `ticket_rules.py` holds the status rules, and `require_roles` protects endpoints.
+- The JWT doesn't contain the role. Looking the user up on each request costs one query, and in
+  return a deactivated user is locked out straight away.
+- Input and output use separate schemas. The ticket creation schema has no status or requester
+  field, so a client can't set them, and the user response has no password field.
+- Constraints are also in the database: unique emails and asset tags, `CHECK` constraints on the
+  enum columns, and foreign keys with a deliberate `RESTRICT`, `SET NULL` or `CASCADE`.
+- Enums are stored as text with a `CHECK` constraint instead of native PostgreSQL enums, which are
+  awkward to change in a migration.
+- An asset's status follows its assignment and can't be set directly, so it can't say "in stock"
+  while someone has it.
+- The login token is kept in `localStorage`. That's simple, but a script injected into the page
+  could read it. A cookie with the `httpOnly` flag would be safer.
 
-## Design decisions
+## Limitations
 
-- **Server-side authorisation only.** The UI hides buttons users can't use, but the API
-  enforces every rule. Hiding a button is convenience, not security.
-- **One place per rule.** `get_visible_ticket` and `get_visible_asset` decide what a user may
-  see; `ticket_rules.py` holds the status state machine; `require_roles` gates endpoints.
-- **Roles are not stored in the token.** The user is loaded on every request, trading one
-  query for instant revocation.
-- **Separate input and output schemas.** `TicketCreate` has no status or requester field, so
-  clients can't set them (mass assignment). `UserRead` has no password field, so the hash
-  can't leak.
-- **Database constraints as the last line of defence.** Unique emails and asset tags, `CHECK`
-  constraints on enums, foreign keys with deliberate `RESTRICT`, `SET NULL` and `CASCADE`.
-- **Enums as `VARCHAR` plus `CHECK`**, not native PostgreSQL `ENUM`, because they are easier
-  to change in migrations.
-- **Asset status follows assignment.** Clients can't set it directly, so an asset can't say
-  "in stock" while assigned to someone.
-- **Same-origin proxy instead of CORS.** The dev server forwards `/api` to the API container.
-- **Token in `localStorage`.** Simple, but readable by injected scripts (XSS). A hardened
-  version would use an `httpOnly` cookie with CSRF protection.
+- Locally the front end runs on the Vite dev server. A production setup would serve a built copy
+  from something like nginx.
+- Migrations run when the API starts. With more than one API instance they should be a separate
+  step.
+- Search uses `ILIKE`. PostgreSQL full-text search would scale better.
+- Tokens last an hour and there are no refresh tokens. The login limiter keeps its counts in
+  memory, so it only works for a single instance and resets on restart.
+- There are no email notifications, attachments or audit log.
+- The demo API sleeps when idle, which is a limit of the free plan.
 
-## Known limitations and next steps
+Notes on how the hosting was chosen and set up are in [docs/deployment.md](docs/deployment.md) and
+[docs/deploy-runbook.md](docs/deploy-runbook.md).
 
-- The web container runs the Vite dev server. A production setup would build static files and
-  serve them (and proxy `/api`) from nginx.
-- Migrations run on API start-up. With several API replicas, run them as a separate one-off job.
-- Search uses `ILIKE`; PostgreSQL full-text search would scale better.
-- Tokens last 60 minutes and there is no refresh-token flow. Login is rate-limited, but the
-  counters live in memory (one instance only, reset on restart).
-- No email notifications, attachments or audit log.
-- Not deployed yet. Hosting: Render (API) + Neon (PostgreSQL) + GitHub Pages (front end). See
-  [docs/deploy-runbook.md](docs/deploy-runbook.md), and [docs/deployment.md](docs/deployment.md)
-  for the options compared.
-
-## Regenerating the screenshots
-
-With the stack running and seeded: `node scripts/screenshots.mjs` (uses your local Chrome).
+## More screenshots
 
 | | |
 |---|---|
 | ![Ticket detail, technician](docs/screenshots/ticket-detail-staff.png) | ![Ticket detail, requester](docs/screenshots/ticket-detail-requester.png) |
-| Technician view: priority, assignee, internal notes | Requester view: same ticket, internal note hidden |
+| Technician view of a ticket | The same ticket as a requester, with the internal note hidden |
 | ![Assets](docs/screenshots/assets.png) | ![Users](docs/screenshots/users-admin.png) |
-| Assets | Admin user management |
+| Assets | User management (admin) |
+
+To regenerate them, run the app with the demo data and then `node scripts/screenshots.mjs`. It
+uses your local Chrome.
