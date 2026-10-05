@@ -5,7 +5,7 @@ from sqlalchemy import select
 
 from app.deps import CurrentUser, DbSession, StaffUser, require_roles
 from app.models import Role, User
-from app.schemas import UserAdminUpdate, UserRead
+from app.schemas import UserAdminUpdate, UserBrief, UserRead
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -27,6 +27,13 @@ def list_assignable_users(_: StaffUser, db: DbSession) -> list[User]:
             .order_by(User.full_name)
         )
     )
+
+
+@router.get("/directory", response_model=list[UserBrief])
+def user_directory(_: StaffUser, db: DbSession) -> list[User]:
+    """Every active user, name and role only. Lets staff pick who an asset goes to
+    without being able to see emails or manage accounts (that stays admin-only)."""
+    return list(db.scalars(select(User).where(User.is_active.is_(True)).order_by(User.full_name)))
 
 
 @router.get("", response_model=list[UserRead])
