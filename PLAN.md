@@ -2,13 +2,20 @@
 
 An IT ticketing and asset tracker, built as an interview-ready portfolio project.
 
-**Status:** DRAFT, awaiting your approval. No code has been written yet.
+**Status:** M0 to M9 complete. M10 (deployment options research) not started; nothing is deployed.
+
+| Milestone | State |
+|---|---|
+| M0 Scaffold, M1 Database, M2 Auth, M3 Tickets | done |
+| M4 Comments | done (implemented by Claude at the owner's request; the original spec and tests are in `docs/M4-comments-spec.md`) |
+| M5 Assets, M6 Seed, M7/M8 Front end, M9 Docs | done |
+| M10 Deployment options | waiting on you |
 
 ## Decisions so far
 
 | Topic | Decision |
 |---|---|
-| Backend | Python 3.12, FastAPI, SQLAlchemy 2.0 (sync), Alembic, Pydantic v2 |
+| Backend | Python 3.12, FastAPI, SQLAlchemy 2.x (sync; 2.1 was installed), Alembic, Pydantic v2 |
 | Database | PostgreSQL 16 (official multi-arch image, runs natively on Apple Silicon) |
 | Auth | Email + password, bcrypt hashes, short-lived JWT access tokens, signup always creates a `requester`, only admins change roles |
 | Front end | Vite + React + TypeScript, React Router, plain CSS, `fetch`, no UI framework |
