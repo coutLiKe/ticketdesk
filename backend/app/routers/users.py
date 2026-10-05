@@ -17,6 +17,20 @@ def read_me(user: CurrentUser) -> User:
     return user
 
 
+@router.get("/assignable", response_model=list[UserRead])
+def list_assignable_users(
+    _: Annotated[User, Depends(require_roles(Role.TECHNICIAN, Role.ADMIN))], db: DbSession
+) -> list[User]:
+    """Who a ticket can be assigned to: active technicians and admins."""
+    return list(
+        db.scalars(
+            select(User)
+            .where(User.is_active.is_(True), User.role.in_([Role.TECHNICIAN, Role.ADMIN]))
+            .order_by(User.full_name)
+        )
+    )
+
+
 @router.get("", response_model=list[UserRead])
 def list_users(_: AdminUser, db: DbSession) -> list[User]:
     return list(db.scalars(select(User).order_by(User.id)))

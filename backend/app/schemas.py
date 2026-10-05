@@ -3,7 +3,7 @@ from typing import Self
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 
-from app.models import Role
+from app.models import Priority, Role, TicketStatus
 
 
 class UserCreate(BaseModel):
@@ -67,3 +67,66 @@ class UserAdminUpdate(BaseModel):
         if self.role is None and self.is_active is None:
             raise ValueError("provide role and/or is_active")
         return self
+
+
+# ---- Tickets -------------------------------------------------------------------------
+
+
+class UserBrief(BaseModel):
+    """Minimal public view of a user, safe to show to any ticket viewer (no email)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    full_name: str
+    role: Role
+
+
+class TicketCreate(BaseModel):
+    """Only title and description. Status, priority, requester and assignee are set by the
+    server, so extra fields a client sends are ignored."""
+
+    title: str = Field(min_length=1, max_length=200)
+    description: str = Field(min_length=1, max_length=10_000)
+
+    @field_validator("title", "description")
+    @classmethod
+    def not_blank(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("must not be blank")
+        return value
+
+
+class TicketRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    title: str
+    description: str
+    status: TicketStatus
+    priority: Priority
+    requester: UserBrief
+    assignee: UserBrief | None
+    created_at: datetime
+    updated_at: datetime
+
+
+class TicketPage(BaseModel):
+    items: list[TicketRead]
+    total: int  # matching tickets across ALL pages, so a UI can render page controls
+    limit: int
+    offset: int
+
+
+class StatusUpdate(BaseModel):
+    status: TicketStatus
+
+
+class PriorityUpdate(BaseModel):
+    priority: Priority
+
+
+class AssigneeUpdate(BaseModel):
+    # No default on purpose: the field must be present. `null` means "unassign".
+    assignee_id: int | None

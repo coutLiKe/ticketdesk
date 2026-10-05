@@ -118,3 +118,22 @@ def auth():
         return {"Authorization": f"Bearer {create_access_token(user.id)}"}
 
     return _auth
+
+
+@pytest.fixture
+def make_ticket(db):
+    """Factory: make_ticket(requester, assignee=None, status=..., priority=..., title=...)."""
+    from app.models import Ticket
+
+    def _make(requester, assignee=None, status=None, priority=None, title="Printer jam", **kw):
+        fields = {"title": title, "description": kw.pop("description", "It is stuck")}
+        if status is not None:
+            fields["status"] = status
+        if priority is not None:
+            fields["priority"] = priority
+        ticket = Ticket(requester=requester, assignee=assignee, **fields)
+        db.add(ticket)
+        db.flush()
+        return ticket
+
+    return _make
