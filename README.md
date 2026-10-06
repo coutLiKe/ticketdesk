@@ -132,7 +132,7 @@ backend/
   tests/             pytest tests, run against a real PostgreSQL
 frontend/src/        React app: pages/, components/, api.ts, auth.tsx
 docs/                screenshots and deployment notes
-scripts/             screenshot generator
+scripts/             screenshot and icon generators
 ```
 
 ## Permissions
